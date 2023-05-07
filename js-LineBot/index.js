@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 5000;
  「チャネルシークレット」== channelSecret
  「チャネルアクセストークン」== channelAccessToken */
 const config = {
-  channelSecret: "2b242b648b0a9bdea6716f0547665ae6", 
-  channelAccessToken: "pyVEnT8mvOP5vxarGh3879qwCpOs5GLXGjzLsw5wkdVIZYLg3B0AIpK8aDFmWWfNKX+vxLOTmzlnf1J3rj76C4nFQRWc0DPKvBY90xJFvO0MsDRfMVqnLhIBasjigqmO9gqhGb+pblkJYonXH82voAdB04t89/1O/w1cDnyilFU="
+  channelSecret: "", 
+  channelAccessToken: ""
 };
 
 // Express を格納。
