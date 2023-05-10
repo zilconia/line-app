@@ -3,6 +3,7 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+import GPT
 
 app = Flask(__name__)
 
@@ -16,9 +17,9 @@ def is_bot_sender(event):
     return False
 
 # LINE DevelopersのWebhook URLに設定する文字列を取得します
-TOKEN = "pyVEnT8mvOP5vxarGh3879qwCpOs5GLXGjzLsw5wkdVIZYLg3B0AIpK8aDFmWWfNKX+vxLOTmzlnf1J3rj76C4nFQRWc0DPKvBY90xJFvO0MsDRfMVqnLhIBasjigqmO9gqhGb+pblkJYonXH82voAdB04t89/1O/w1cDnyilFU="
+TOKEN = "YOU-GPT-KEY"
 #input("LineBotのトークンを入力：")
-SECRET = "2b242b648b0a9bdea6716f0547665ae6"#input("チャネルシークレットを入力：")
+SECRET = "YOU-GPT-SECRET"#input("チャネルシークレットを入力：")
 line_bot_api = LineBotApi(TOKEN)
 handler = WebhookHandler(SECRET)
 
@@ -54,8 +55,8 @@ def handle_message(event):
     else:
         return
     # コンソールへの出力（確認用）
-    print(f"Type：{event.source.type}")
-    print(f"ID：{reply_destination}")
+    print(f"トークType：{event.source.type}")
+    print(f"ルームID：{reply_destination}")
     print(f"Message：{event.message.text}")
 
     # 送信元のメッセージに返信する機能
@@ -66,10 +67,13 @@ def handle_message(event):
         TextSendMessage(text=event.message.text)
     )
     """
-    # プッシュ通知をするサンプル
+
+    message = GPT.main(event.message.text)
+
+    # プッシュ通知をする機能
     line_bot_api.push_message(
         reply_destination,#"U3a53e5e96e7d1cfca97724676bf21890",
-        TextSendMessage(text=input("返信を入力："))
+        TextSendMessage(text=message)#input("返信を入力："))
     )
 
 if __name__ == "__main__":

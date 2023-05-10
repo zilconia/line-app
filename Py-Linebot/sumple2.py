@@ -7,9 +7,9 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage
 app = Flask(__name__)
 
 # LINE DevelopersのWebhook URLに設定する文字列を取得します
-TOKEN = "pyVEnT8mvOP5vxarGh3879qwCpOs5GLXGjzLsw5wkdVIZYLg3B0AIpK8aDFmWWfNKX+vxLOTmzlnf1J3rj76C4nFQRWc0DPKvBY90xJFvO0MsDRfMVqnLhIBasjigqmO9gqhGb+pblkJYonXH82voAdB04t89/1O/w1cDnyilFU="
+TOKEN = "YOU-LINE-KEY"
 #input("LineBotのトークンを入力：")
-SECRET = "2b242b648b0a9bdea6716f0547665ae6"#input("チャネルシークレットを入力：")
+SECRET = "YOU-LINE-SECRET"#input("チャネルシークレットを入力：")
 line_bot_api = LineBotApi(TOKEN)
 handler = WebhookHandler(SECRET)
 
@@ -43,27 +43,12 @@ def callback():
 # MessageEventの場合の処理を実行する関数を定義します
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    # メッセージ送信者がボットである場合、処理を行わない
-    if is_bot_sender(event):
-        return
-
-    received_text = event.message.text
-    reply_text = received_text
-
-    # イベントのタイプに応じて返信先を設定
-    if event.source.type == 'user':
-        # 1対1のトーク
-        reply_destination = event.source.user_id
-    elif event.source.type == 'group':
-        # グループチャット
-        reply_destination = event.source.group_id
-    else:
-        return
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        # メッセージを送信（直前のメッセージをそのまま送信）
-        TextSendMessage(text=event.message.text)
+    user_id = event.source.user_id  # ユーザーIDを取得
+    print(user_id)
+    text = f"{user_id}: {event.message.text}"  # ユーザーIDとメッセージを結合
+    line_bot_api.push_message(
+        user_id,
+        TextSendMessage(message=text)
     )
 
 
