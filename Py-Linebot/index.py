@@ -1,9 +1,16 @@
+# -*- coding: utf-8 -*-
+
 import os
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+import json
+from pprint import pprint
+# GPT.py をインポート
 import GPT
+# 
+from API_key import Token, Secret
 
 app = Flask(__name__)
 
@@ -16,10 +23,27 @@ def is_bot_sender(event):
         return True
     return False
 
+# 入力内容の記録用
+def json_memo(userId,memo):
+    # ファイルネーム
+    fp="Line_log.json"
+    if not(os.path.exists(fp)):
+        with open(fp,"w",encoding="utf-8") as f:
+            json.dump({},f,ensure_ascii = False,indent=4)
+            f.truncate()
+    with open(fp,"r+",encoding="utf-8") as f:
+        f.seek(0)
+        data = json.load(f)
+        data[str(len(data))]={"UserID":userId,"message":memo}
+        f.seek(0)
+        json.dump(data,f,ensure_ascii = False,indent=4)
+        f.truncate()
+        # デバッグ表示
+        # pprint(data,width=40)
+
 # LINE DevelopersのWebhook URLに設定する文字列を取得します
-TOKEN = "YOU-GPT-KEY"
-#input("LineBotのトークンを入力：")
-SECRET = "YOU-GPT-SECRET"#input("チャネルシークレットを入力：")
+TOKEN = Token
+SECRET = Secret
 line_bot_api = LineBotApi(TOKEN)
 handler = WebhookHandler(SECRET)
 
@@ -45,6 +69,7 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
 
+    """
     # イベントのタイプに応じて返信先を設定
     if event.source.type == 'user':
         # 1対1のトーク
@@ -54,27 +79,34 @@ def handle_message(event):
         reply_destination = event.source.group_id
     else:
         return
+    """
     # コンソールへの出力（確認用）
     print(f"トークType：{event.source.type}")
-    print(f"ルームID：{reply_destination}")
+    print(f"ユーザーID：{event.source.user_id}")
     print(f"Message：{event.message.text}")
+    if event.source.type == 'group':
+        print(f"\nルームID：{event.source.group_id}\n")
+    
+    json_memo(event.source.user_id,event.message.text)
 
-    # 送信元のメッセージに返信する機能
     """
     line_bot_api.reply_message(
         event.reply_token,
         # メッセージを送信（直前のメッセージをそのまま送信）
         TextSendMessage(text=event.message.text)
     )
+    
     """
-
-    message = GPT.main(event.message.text)
-
+    level,message = GPT.main(event.message.text)
+    #message=event.message.text
+    print(f"\n危険度：{level}\n返信内容：{message}\n")
     # プッシュ通知をする機能
-    line_bot_api.push_message(
-        reply_destination,#"U3a53e5e96e7d1cfca97724676bf21890",
-        TextSendMessage(text=message)#input("返信を入力："))
-    )
+    if message != None:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=message)#input("返信を入力："))
+        )
+        
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
