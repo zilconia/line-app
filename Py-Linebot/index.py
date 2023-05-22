@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+# ライブラリのインポート
 import os
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
@@ -7,18 +7,19 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import json
 from pprint import pprint
+
 # GPT.py をインポート
 import GPT
-# 
+# LineAPI の値をAPI_key.pyからインポート
 from API_key import Token, Secret
 
+# 
 app = Flask(__name__)
 
 # 安全装置（他のボットにこのボットが反応しないようにする）
 def is_bot_sender(event):
     sender_id = event.source.user_id
     bot_id = line_bot_api.get_profile(sender_id).user_id
-
     if sender_id == bot_id:
         return True
     return False
@@ -89,7 +90,7 @@ def handle_message(event):
     
     json_memo(event.source.user_id,event.message.text)
 
-    """
+    
     line_bot_api.reply_message(
         event.reply_token,
         # メッセージを送信（直前のメッセージをそのまま送信）
@@ -106,8 +107,9 @@ def handle_message(event):
             event.reply_token,
             TextSendMessage(text=message)#input("返信を入力："))
         )
+    """
         
-
+# index.py 自体を起動したら実行される。
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
