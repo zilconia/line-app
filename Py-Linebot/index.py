@@ -8,8 +8,8 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import json
 from pprint import pprint
 
-# GPT.py をインポート
-import GPT
+# GPT.py (Rinna.py) をインポート
+import GPT,Rinna
 # LineAPI の値をAPI_key.pyからインポート
 from API_key import Token, Secret
 
@@ -94,10 +94,10 @@ def handle_message(event):
     line_bot_api.reply_message(
         event.reply_token,
         # メッセージを送信（直前のメッセージをそのまま送信）
-        TextSendMessage(text=event.message.text)
+        TextSendMessage(text=event.message.text)# input("返信内容を入力")
     )
     
-    """
+    """# ChatGPT による返信機能
     level,message = GPT.main(event.message.text)
     #message=event.message.text
     print(f"\n危険度：{level}\n返信内容：{message}\n")
@@ -105,10 +105,20 @@ def handle_message(event):
     if message != None:
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=message)#input("返信を入力："))
+            TextSendMessage(text=message))
         )
     """
-        
+    """# Rinna による返信機能
+    message = Rinna.main(event.message.text)
+    print(f"\n返信内容：{message}\n")
+    # プッシュ通知をする機能
+    if message != None:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=message))
+        )
+    """
+
 # index.py 自体を起動したら実行される。
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
