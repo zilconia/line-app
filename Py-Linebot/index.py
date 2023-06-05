@@ -9,7 +9,7 @@ import json
 from pprint import pprint
 
 # GPT.py (Rinna.py) をインポート
-import GPT,Rinna
+# import GPT,Rinna
 # LineAPI の値をAPI_key.pyからインポート
 from API_key import Token, Secret
 
@@ -25,17 +25,21 @@ def is_bot_sender(event):
     return False
 
 # 入力内容の記録用
-def json_memo(userId,memo):
+def json_memo(userid,memo):
     # ファイルネーム
     fp="Line_log.json"
+
+    # 上記ファイルがなかった時の新規作成機能
     if not(os.path.exists(fp)):
         with open(fp,"w",encoding="utf-8") as f:
             json.dump({},f,ensure_ascii = False,indent=4)
             f.truncate()
+
+    # ファイルに入力内容をを保存する一連の流れ
     with open(fp,"r+",encoding="utf-8") as f:
         f.seek(0)
         data = json.load(f)
-        data[str(len(data))]={"UserID":userId,"message":memo}
+        data[str(len(data))]={"UserID":userid,"message":memo}
         f.seek(0)
         json.dump(data,f,ensure_ascii = False,indent=4)
         f.truncate()
@@ -55,9 +59,8 @@ def callback():
     signature = request.headers["X-Line-Signature"]
     # Lineアプリ側のメッセージを取得（str型として取得）
     body = request.get_data(as_text=True)
-
-    app.logger.info("Request body: " + body)
-
+    # メッセージに対する様々なログが表示される
+    # app.logger.info("Request body: " + body)
     # リクエストによるアプリの動作結果を返す
     try:
         handler.handle(body, signature)
@@ -65,6 +68,17 @@ def callback():
         abort(400)
     return "OK"
 
+# 取得したイベントに記載されたユーザーIDを使用してアカウント名を取得する
+def get_account_name(user_id):
+    try:
+        # プロフィール情報を取得
+        profile = line_bot_api.get_profile(user_id)
+        account_name = profile.display_name
+        return account_name
+    except LineBotApiError as e:
+        # エラーハンドリング
+        print(e)
+        return None
 
 # MessageEventの場合の処理を実行する関数を定義します
 @handler.add(MessageEvent, message=TextMessage)
@@ -82,6 +96,7 @@ def handle_message(event):
         return
     """
     # コンソールへの出力（確認用）
+    print(f"ユーザーネーム：{get_account_name(event.source.user_id)}")
     print(f"トークType：{event.source.type}")
     print(f"ユーザーID：{event.source.user_id}")
     print(f"Message：{event.message.text}")
@@ -89,7 +104,6 @@ def handle_message(event):
         print(f"\nルームID：{event.source.group_id}\n")
     
     json_memo(event.source.user_id,event.message.text)
-
     
     line_bot_api.reply_message(
         event.reply_token,
