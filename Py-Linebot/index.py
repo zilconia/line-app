@@ -9,13 +9,17 @@ import json
 from pprint import pprint
 
 # GPT.py (Rinna.py) をインポート
-import GPT-3.5 as GPT
+import GPT_35 as GPT
 # import Rinna
 # LineAPI の値をAPI_key.pyからインポート
 from API_key import Token, Secret
 
-# 
+# Flask のセットアップ
 app = Flask(__name__)
+
+# LINE DevelopersのWebhook URLに設定する文字列を取得します
+line_bot_api = LineBotApi(Token)
+handler = WebhookHandler(Secret)
 
 # 安全装置（他のボットにこのボットが反応しないようにする）
 def is_bot_sender(event):
@@ -25,50 +29,62 @@ def is_bot_sender(event):
         return True
     return False
 
-# 入力内容の記録用
-def Log_Message(userid,memo):
+# 入力しているユーザーの新規登録
+def Log_User(userid):
     # ファイルネーム
-    file="Line_log.json"
-
+    file="Line_User.json"
     # 上記ファイルがなかった時の新規作成機能
     if not(os.path.exists(file)):
         with open(file,"w",encoding="utf-8") as f:
-            """base={
-                "User":{},
-                "Log":{}
-            }"""
             json.dump({},f,ensure_ascii = False,indent=4)
             f.truncate()
-
     # ファイルに入力内容をを保存する一連の流れ
     with open(file,"r+",encoding="utf-8") as f:
         f.seek(0)
         data = json.load(f)
-        """
-        if mode=="User":
-            d={
-                "ID":userid,
-                "sige"
-            }
-        """
-        data[mode][str(len(data))]={
+        # 新規ユーザーが初めて入力した場合に登録する
+        if not(userid in data):
+            data[userid]=chr(ord("a")+len(data))
+            f.seek(0)
+            json.dump(data,f,ensure_ascii = False,indent=4)
+            f.truncate()
+        # IDに応じたタグの出力
+        return data[userid]
+
+# 入力内容の記録用
+def Log_Message(userid,memo):
+    # ファイルネーム
+    file="Line_log.json"
+    # 上記ファイルがなかった時の新規作成機能
+    if not(os.path.exists(file)):
+        with open(file,"w",encoding="utf-8") as f:
+            json.dump({},f,ensure_ascii = False,indent=4)
+            f.truncate()
+    # ファイルに入力内容をを保存する一連の流れ
+    with open(file,"r+",encoding="utf-8") as f:
+        f.seek(0)
+        data = json.load(f)
+        data[str(len(data))]={
             "UserID":userid,
             "message":memo
         }
+        if len(data)>100:
+            for i in range(100):
+                data[f"{i}"]=data.pop(f"{i+1}")
         f.seek(0)
         json.dump(data,f,ensure_ascii = False,indent=4)
         f.truncate()
+        # 入力内容の最新5件をreturnで出力する
+        m=[]
+        for i in range(5):
+            m.insert(0,data[f"{len(data)-1-i}"])
+            if (len(data))==i+1 and i<=5:
+                break
+        return m
+
         # デバッグ表示
         # pprint(data,width=40)
-
-# def Log_API():
-    
-
-# LINE DevelopersのWebhook URLに設定する文字列を取得します
-
-line_bot_api = LineBotApi(Token)
-handler = WebhookHandler(Secret)
-
+ 
 # Webhookからのリクエストを受信するためのエンドポイントを作成します
 @app.route("/callback", methods=["POST"])
 def callback():
@@ -86,7 +102,7 @@ def callback():
     return "OK"
 
 # 取得したイベントに記載されたユーザーIDを使用してアカウント名を取得する
-def get_account_name(user_id):
+def Line_name(user_id):
     try:
         # プロフィール情報を取得
         profile = line_bot_api.get_profile(user_id)
@@ -100,12 +116,13 @@ def get_account_name(user_id):
 # MessageEventの場合の処理を実行する関数を定義します
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-
+    # ユーザー情報
     user={
-            "name":get_account_name(event.source.user_id), # 名前
+            "name":Line_name(event.source.user_id), # 名前
             "id":event.source.user_id, # ID
             "message":event.message.text # メッセージ
         }
+    # メッセージイベントの出力先タイプ（グループ, 個人）
     eve_type=event.source.type
 
     # コンソールへの出力（確認用）
@@ -116,17 +133,26 @@ def handle_message(event):
     if event.source.type == 'group':
         print(f"\nルームID：{event.source.group_id}\n")
     
-    # UserのIDとメッセージの保存
-    Log_Message(user["id"],user["message"])
-    """
+    # ユーザーのIDとメッセージの保存＋直近のログ5件を出力
+    Logs=Log_Message(user["id"],user["message"])
+    # Logs のUserIDを短絡的なネームタグ(a,b,c ...)に変換する＋新規ユーザーをネームタグに対応させる。
+    for i in range(len(Logs)):
+        Logs[i]["UserID"]=Log_User(Logs[i]["UserID"])
+    
+    # メッセージの返信
     line_bot_api.reply_message(
         event.reply_token,
-        # メッセージを送信（直前のメッセージをそのまま送信）
+        # メッセージを設定（直前のメッセージをそのまま送信）
         TextSendMessage(text=user["message"])# input("返信内容を入力")
     )
     """
+    # テスト出力
+    message = GPT.main(Logs)
+    print(f"\n{message}\n")
+    """
+    """
     # ChatGPT による返信機能
-    message = GPT.main(event.message.text)
+    message = GPT.main(Logs)
     #message=event.message.text
     #print(f"\n危険度：{level}\n返信内容：{message}\n")
     print(f"\n返信内容：{message}\n")
@@ -136,7 +162,7 @@ def handle_message(event):
             event.reply_token,
             TextSendMessage(text=message)
         )
-    
+    """
     """# Rinna による返信機能
     message = Rinna.main(event.message.text)
     print(f"\n返信内容：{message}\n")

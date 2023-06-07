@@ -28,15 +28,17 @@ def main(user_message):
         for i in range(user_message):
             context.append({"role": "user", "content": user_message[i]})
     """
-    context.append({"role": "user", "content": user_message})
+    for i in user_message:
+        context.append({"role": "user", "content": f"{i["UserID"]}：{i["message"]}"})
     # user入力をカウントし、5を超えたら1つ削除する
+    """
     c=0
     for i in len(1,context):
         if context[i] in "user":
             c+=1
     if c>5:
         context.pop(1)
-
+    """
     # Create a chat completion with the gpt-3.5-turbo model
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -52,6 +54,3 @@ def main(user_message):
     context.append({"role": "assistant", "content": response['choices'][0]['message']['content']})
 
     return response['choices'][0]['message']['content']
-    
-if __name__=="__main__":
-    main(input("会話内容を入力："))
