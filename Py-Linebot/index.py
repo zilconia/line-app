@@ -9,7 +9,8 @@ import json
 from pprint import pprint
 
 # GPT.py (Rinna.py) をインポート
-# import GPT,Rinna
+import GPT-3.5 as GPT
+# import Rinna
 # LineAPI の値をAPI_key.pyからインポート
 from API_key import Token, Secret
 
@@ -25,32 +26,48 @@ def is_bot_sender(event):
     return False
 
 # 入力内容の記録用
-def json_memo(userid,memo):
+def Log_Message(userid,memo):
     # ファイルネーム
-    fp="Line_log.json"
+    file="Line_log.json"
 
     # 上記ファイルがなかった時の新規作成機能
-    if not(os.path.exists(fp)):
-        with open(fp,"w",encoding="utf-8") as f:
+    if not(os.path.exists(file)):
+        with open(file,"w",encoding="utf-8") as f:
+            """base={
+                "User":{},
+                "Log":{}
+            }"""
             json.dump({},f,ensure_ascii = False,indent=4)
             f.truncate()
 
     # ファイルに入力内容をを保存する一連の流れ
-    with open(fp,"r+",encoding="utf-8") as f:
+    with open(file,"r+",encoding="utf-8") as f:
         f.seek(0)
         data = json.load(f)
-        data[str(len(data))]={"UserID":userid,"message":memo}
+        """
+        if mode=="User":
+            d={
+                "ID":userid,
+                "sige"
+            }
+        """
+        data[mode][str(len(data))]={
+            "UserID":userid,
+            "message":memo
+        }
         f.seek(0)
         json.dump(data,f,ensure_ascii = False,indent=4)
         f.truncate()
         # デバッグ表示
         # pprint(data,width=40)
 
+# def Log_API():
+    
+
 # LINE DevelopersのWebhook URLに設定する文字列を取得します
-TOKEN = Token
-SECRET = Secret
-line_bot_api = LineBotApi(TOKEN)
-handler = WebhookHandler(SECRET)
+
+line_bot_api = LineBotApi(Token)
+handler = WebhookHandler(Secret)
 
 # Webhookからのリクエストを受信するためのエンドポイントを作成します
 @app.route("/callback", methods=["POST"])
@@ -64,7 +81,7 @@ def callback():
     # リクエストによるアプリの動作結果を返す
     try:
         handler.handle(body, signature)
-    except InvalidSignatureError:
+    except InvalidSignatureError: # 
         abort(400)
     return "OK"
 
@@ -84,44 +101,42 @@ def get_account_name(user_id):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
 
-    """
-    # イベントのタイプに応じて返信先を設定
-    if event.source.type == 'user':
-        # 1対1のトーク
-        reply_destination = event.source.user_id
-    elif event.source.type == 'group':
-        # グループチャット
-        reply_destination = event.source.group_id
-    else:
-        return
-    """
+    user={
+            "name":get_account_name(event.source.user_id), # 名前
+            "id":event.source.user_id, # ID
+            "message":event.message.text # メッセージ
+        }
+    eve_type=event.source.type
+
     # コンソールへの出力（確認用）
-    print(f"ユーザーネーム：{get_account_name(event.source.user_id)}")
-    print(f"トークType：{event.source.type}")
-    print(f"ユーザーID：{event.source.user_id}")
-    print(f"Message：{event.message.text}")
+    print(f"ユーザーネーム：{user['name']}")
+    print(f"トークType：{eve_type}")
+    print(f"ユーザーID：{user['id']}")
+    print(f"Message：{user['message']}")
     if event.source.type == 'group':
         print(f"\nルームID：{event.source.group_id}\n")
     
-    json_memo(event.source.user_id,event.message.text)
-    
+    # UserのIDとメッセージの保存
+    Log_Message(user["id"],user["message"])
+    """
     line_bot_api.reply_message(
         event.reply_token,
         # メッセージを送信（直前のメッセージをそのまま送信）
-        TextSendMessage(text=event.message.text)# input("返信内容を入力")
+        TextSendMessage(text=user["message"])# input("返信内容を入力")
     )
-    
-    """# ChatGPT による返信機能
-    level,message = GPT.main(event.message.text)
+    """
+    # ChatGPT による返信機能
+    message = GPT.main(event.message.text)
     #message=event.message.text
-    print(f"\n危険度：{level}\n返信内容：{message}\n")
+    #print(f"\n危険度：{level}\n返信内容：{message}\n")
+    print(f"\n返信内容：{message}\n")
     # プッシュ通知をする機能
-    if message != None:
+    if message != 0:
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=message))
+            TextSendMessage(text=message)
         )
-    """
+    
     """# Rinna による返信機能
     message = Rinna.main(event.message.text)
     print(f"\n返信内容：{message}\n")
@@ -129,7 +144,7 @@ def handle_message(event):
     if message != None:
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=message))
+            TextSendMessage(text=message)
         )
     """
 
