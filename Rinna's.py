@@ -1,44 +1,33 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+# ライブラリ「SentencePiece」も必要になる
+# ( T5Tokenizer で上記ライブラリが必要になるため。)
 
-def mein(user_input):
-    tokenizer = AutoTokenizer.from_pretrained("rinna/japanese-gpt-neox-3.6b-instruction-sft", use_fast=False)
-    model = AutoModelForCausalLM.from_pretrained("rinna/japanese-gpt-neox-3.6b-instruction-sft")
+tokenizer = AutoTokenizer.from_pretrained("rinna/japanese-gpt-neox-3.6b-instruction-sft", use_fast=False)
+model = AutoModelForCausalLM.from_pretrained("rinna/japanese-gpt-neox-3.6b-instruction-sft")
 
-    if torch.cuda.is_available():
-        # model = model.to("cuda")
-        model = model.to("cpu")
+if torch.cuda.is_available():
+    #model = model.to("cuda")
+    model = model.to("cpu")
 
-    # 初期の会話プロンプト
-    conversation = [
-        {
-            "speaker": "ユーザー",
-            "text": "あなたは投稿を判断するシステムに組み込まれている。"
-        },
-        {
-            "speaker": "システム",
-            "text": "はい、投稿の判断が可能です。"
-        },
-        {
-            "speaker": "ユーザー",
-            "text": "今から会話を渡す。次に入力しようとしている投稿を入力するため、それが悪意があるか否か判断せよ。"
-        },
-        {
-            "speaker": "システム",
-            "text": "了解しました。投稿をお待ちしています。"
-        }
-    ]
+# 初期の会話プロンプト
+conversation = [
+    {
+        "speaker": "システム",
+        "text": "こんにちは、何をお手伝いできますか？"
+    }
+]
 
-    # while True:
+while True:
     # ユーザーからの入力を受け取る
-    # user_input = input("ユーザーの投稿: ")
-    
+    user_input = input("ユーザー: ")
+
     # ユーザーの発話を会話に追加する
     conversation.append({
         "speaker": "ユーザー",
         "text": user_input
     })
-    
+
     # 入力プロンプトを作成する
     prompt = [
         f"{uttr['speaker']}: {uttr['text']}"
@@ -50,7 +39,6 @@ def mein(user_input):
         + "<NL>"
         + "システム: "
     )
-
 
     # モデルによる応答を生成する
     token_ids = tokenizer.encode(prompt, add_special_tokens=False, return_tensors="pt")
@@ -77,5 +65,3 @@ def mein(user_input):
         "speaker": "システム",
         "text": output
     })
-    return output
-
