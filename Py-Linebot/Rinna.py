@@ -78,4 +78,3 @@ def mein(user_input):
         "text": output
     })
     return output
-
