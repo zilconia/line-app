@@ -31,25 +31,20 @@ def is_bot_sender(event):
 
 # 入力しているユーザーの新規登録
 def Log_User(userid):
-    # ファイルネーム
-    file="Line_User.json"
-    # 上記ファイルがなかった時の新規作成機能
-    if not(os.path.exists(file)):
+    file="Line_User.json" # ファイルネーム
+    if not(os.path.exists(file)): # 上記ファイルがなかった時の新規作成機能
         with open(file,"w",encoding="utf-8") as f:
             json.dump({},f,ensure_ascii = False,indent=4)
             f.truncate()
-    # ファイルに入力内容をを保存する一連の流れ
-    with open(file,"r+",encoding="utf-8") as f:
+    with open(file,"r+",encoding="utf-8") as f: # ファイルに入力内容をを保存する一連の流れ
         f.seek(0)
         data = json.load(f)
-        # 新規ユーザーが初めて入力した場合に登録する
-        if not(userid in data):
-            data[userid]=chr(ord("a")+len(data))
+        if not(userid in data): # 新規ユーザーが初めて入力した場合に登録する
+            data[userid]=chr(ord("a")+len(data)) # "a"の「Unicode コードポイント(int型)」を取得し、dataの配列サイズ分の数値を追加して文字に変換する。
             f.seek(0)
             json.dump(data,f,ensure_ascii = False,indent=4)
             f.truncate()
-        # IDに応じたタグの出力
-        return data[userid]
+        return data[userid] # IDに応じたタグの出力
 
 # 入力内容の記録用
 def Log_Message(userid,memo):
@@ -138,31 +133,29 @@ def handle_message(event):
     # Logs のUserIDを短絡的なネームタグ(a,b,c ...)に変換する＋新規ユーザーをネームタグに対応させる。
     for i in range(len(Logs)):
         Logs[i]["UserID"]=Log_User(Logs[i]["UserID"])
+        # 入力用の形式に変換する
+        Uid, text = Logs[i]["UserID"], Logs[i]["message"]
+        Logs[i]=f"{Uid}:{text}"
     
     # メッセージの返信
     line_bot_api.reply_message(
         event.reply_token,
         # メッセージを設定（直前のメッセージをそのまま送信）
-        TextSendMessage(text=user["message"])# input("返信内容を入力")
+        TextSendMessage(text=Logs[4])# input("返信内容を入力")
     )
-    """
-    # テスト出力
-    message = GPT.main(Logs)
-    print(f"\n{message}\n")
-    """
-    """
-    # ChatGPT による返信機能
-    message = GPT.main(Logs)
-    #message=event.message.text
-    #print(f"\n危険度：{level}\n返信内容：{message}\n")
-    print(f"\n返信内容：{message}\n")
-    # プッシュ通知をする機能
-    if message != 0:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=message)
-        )
-    """
+    
+    
+    # # ChatGPT による返信機能
+    # message = GPT.main(Logs)
+    # #print(f"\n危険度：{level}\n返信内容：{message}\n")
+    # print(f"\n返信内容：{message}\n")
+    # # プッシュ通知をする機能
+    # if message != 0:
+    #     line_bot_api.reply_message(
+    #         event.reply_token,
+    #         TextSendMessage(text=message)
+    #     )
+    
     """# Rinna による返信機能
     message = Rinna.main(event.message.text)
     print(f"\n返信内容：{message}\n")
