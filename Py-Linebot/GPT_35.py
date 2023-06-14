@@ -12,7 +12,7 @@ def main(user_message):
     ]
     
     for i in user_message: # メッセージの履歴と入力内容を追加
-        context.append({"role": "user", "content": f"{i}"})
+        context[0]["content"] += f"\n{i} "
     
     # Create a chat completion with the gpt-3.5-turbo model
     response = openai.ChatCompletion.create(
