@@ -31,5 +31,3 @@ def main(user_message):
     # "0" 以外の、問題のあるコメントに対する出力であれば出力を返す。
     if response['choices'][0]['message']['content'].strip() != '0':
         return response['choices'][0]['message']['content']
-
-    
