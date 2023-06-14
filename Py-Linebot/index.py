@@ -137,24 +137,24 @@ def handle_message(event):
         Uid, text = Logs[i]["UserID"], Logs[i]["message"]
         Logs[i]=f"{Uid}:{text}"
     
-    # メッセージの返信
-    line_bot_api.reply_message(
-        event.reply_token,
-        # メッセージを設定（直前のメッセージをそのまま送信）
-        TextSendMessage(text=Logs[4])# input("返信内容を入力")
-    )
+    # # メッセージの返信
+    # line_bot_api.reply_message(
+    #     event.reply_token,
+    #     # メッセージを設定（直前のメッセージをそのまま送信）
+    #     TextSendMessage(text=Logs[4])# input("返信内容を入力")
+    # )
     
     
-    # # ChatGPT による返信機能
-    # message = GPT.main(Logs)
-    # #print(f"\n危険度：{level}\n返信内容：{message}\n")
-    # print(f"\n返信内容：{message}\n")
-    # # プッシュ通知をする機能
-    # if message != 0:
-    #     line_bot_api.reply_message(
-    #         event.reply_token,
-    #         TextSendMessage(text=message)
-    #     )
+    # ChatGPT による返信機能
+    message = GPT.main(Logs)
+    #print(f"\n危険度：{level}\n返信内容：{message}\n")
+    print(f"\n返信内容：{message}\n")
+    # プッシュ通知をする機能
+    if message != 0:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=message)
+        )
     
     """# Rinna による返信機能
     message = Rinna.main(event.message.text)

@@ -31,3 +31,11 @@ def main(user_message):
     # "0" 以外の、問題のあるコメントに対する出力であれば出力を返す。
     if response['choices'][0]['message']['content'].strip() != '0':
         return response['choices'][0]['message']['content']
+    
+if __name__ == "__main__":
+    a=[]
+    print("「ユーザー名:投稿内容」の形式で入力\n")
+    for i in range(5):
+        text=input("投稿内容を入力：")
+        a.append(text)
+    main(a)
