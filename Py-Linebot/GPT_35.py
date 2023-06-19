@@ -12,6 +12,10 @@ def main(user_message):
     ]
     
     for i in user_message: # メッセージの履歴と入力内容を追加
+        if user_message.index(i) == 0 and len(user_message) > 1:
+            context[0]["content"] += "\n「履歴」"
+        elif user_message.index(i) == (len(user_message)-1):
+            context[0]["content"] += "\n「投稿内容」"
         context[0]["content"] += f"\n{i} "
     
     # Create a chat completion with the gpt-3.5-turbo model
@@ -34,8 +38,12 @@ def main(user_message):
     
 if __name__ == "__main__":
     a=[]
-    print("「ユーザー名:投稿内容」の形式で入力\n")
-    for i in range(5):
-        text=input("投稿内容を入力：")
-        a.append(text)
-    main(a)
+    print("「ユーザー名:投稿内容」の形式で入力\n「0」で停止\n")
+    while True:
+      text=input("投稿内容を入力：")
+      if text[0]=="0":
+        break
+      a.append(text)
+      if len(a)>5:
+        a.pop(0)
+      main(a)
