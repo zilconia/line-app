@@ -29,53 +29,61 @@ def is_bot_sender(event):
         return True
     return False
 
-# 入力しているユーザーの新規登録
-def Log_User(userid):
-    file="Line_User.json" # ファイルネーム
-    if not(os.path.exists(file)): # 上記ファイルがなかった時の新規作成機能
-        with open(file,"w",encoding="utf-8") as f:
-            json.dump({},f,ensure_ascii = False,indent=4)
-            f.truncate()
-    with open(file,"r+",encoding="utf-8") as f: # ファイルに入力内容をを保存する一連の流れ
-        f.seek(0)
-        data = json.load(f)
-        if not(userid in data): # 新規ユーザーが初めて入力した場合に登録する
-            data[userid]=chr(ord("a")+len(data)) # "a"の「Unicode コードポイント(int型)」を取得し、dataの配列サイズ分の数値を追加して文字に変換する。
+class Save: # データ保存用の各種関数を収納
+    @classmethod 
+    def User(cls,id): # 入力ユーザーの記録・短縮タグの出力
+        file = "Line_User.json" # ファイルネーム
+
+        if not(os.path.exists(file)): # 上記ファイルがなかった時の新規作成機能
+            cls.Newfolder(file)
+        
+        with open(file,"r+",encoding="utf-8") as f: # ファイルに入力内容をを保存する一連の流れ
+            f.seek(0)
+            data = json.load(f)
+            if not(id in data): # 新規ユーザーが初めて入力した場合に登録する
+                data[id]=chr(ord("a")+len(data)) # "a"の「Unicode コードポイント(int型)」を取得し、dataの配列サイズ分の数値を追加して文字に変換する。
+                f.seek(0)
+                json.dump(data,f,ensure_ascii = False,indent=4)
+                f.truncate()
+        
+        return data[id] # IDに応じたタグの出力
+
+    # 入力内容の記録用
+    @classmethod
+    def Message(cls,id,chat):
+        file="Line_log.json" # ファイルネーム
+        
+        if not(os.path.exists(file)): # 上記ファイルがなかった時の新規作成機能
+            cls.Newfolder(file)
+
+        # ファイルに入力内容をを保存する一連の流れ
+        with open(file,"r+",encoding="utf-8") as f:
+            f.seek(0)
+            data = json.load(f)
+            data[str(len(data))]={
+                "UserID":id,
+                "message":chat
+            }
+            if len(data)>100: # チャットデータ数の保存上限超過分を削除
+                for i in range(100): # 最も古いチャット内容を上書き操作で削除する
+                    data[f"{i}"]=data.pop(f"{i+1}")
             f.seek(0)
             json.dump(data,f,ensure_ascii = False,indent=4)
             f.truncate()
-        return data[userid] # IDに応じたタグの出力
+            # 入力内容の最新5件をreturnで出力する
+            m=[]
+            for i in range(5):
+                m.insert(0,data[f"{len(data)-1-i}"]) # dataの頭から
+                if (len(data))==i+1 and i<=5:
+                    break
+            return m
+    
+    @classmethod
+    def Newfolder(cls,name): # 新規フォルダ作成用関数
+        with open(name,"w",encoding="utf-8") as f:
+                json.dump({},f,ensure_ascii = False,indent=4)
+                f.truncate()
 
-# 入力内容の記録用
-def Log_Message(userid,memo):
-    # ファイルネーム
-    file="Line_log.json"
-    # 上記ファイルがなかった時の新規作成機能
-    if not(os.path.exists(file)):
-        with open(file,"w",encoding="utf-8") as f:
-            json.dump({},f,ensure_ascii = False,indent=4)
-            f.truncate()
-    # ファイルに入力内容をを保存する一連の流れ
-    with open(file,"r+",encoding="utf-8") as f:
-        f.seek(0)
-        data = json.load(f)
-        data[str(len(data))]={
-            "UserID":userid,
-            "message":memo
-        }
-        if len(data)>100:
-            for i in range(100):
-                data[f"{i}"]=data.pop(f"{i+1}")
-        f.seek(0)
-        json.dump(data,f,ensure_ascii = False,indent=4)
-        f.truncate()
-        # 入力内容の最新5件をreturnで出力する
-        m=[]
-        for i in range(5):
-            m.insert(0,data[f"{len(data)-1-i}"])
-            if (len(data))==i+1 and i<=5:
-                break
-        return m
 
         # デバッグ表示
         # pprint(data,width=40)
@@ -129,32 +137,32 @@ def handle_message(event):
         print(f"\nルームID：{event.source.group_id}\n")
     
     # ユーザーのIDとメッセージの保存＋直近のログ5件を出力
-    Logs=Log_Message(user["id"],user["message"])
+    Logs=Save.Message(user["id"],user["message"])
     # Logs のUserIDを短絡的なネームタグ(a,b,c ...)に変換する＋新規ユーザーをネームタグに対応させる。
     for i in range(len(Logs)):
-        Logs[i]["UserID"]=Log_User(Logs[i]["UserID"])
+        Logs[i]["UserID"]=Save.User(Logs[i]["UserID"])
         # 入力用の形式に変換する
         Uid, text = Logs[i]["UserID"], Logs[i]["message"]
         Logs[i]=f"{Uid}:{text}"
     
-    # # メッセージの返信
-    # line_bot_api.reply_message(
-    #     event.reply_token,
-    #     # メッセージを設定（直前のメッセージをそのまま送信）
-    #     TextSendMessage(text=Logs[4])# input("返信内容を入力")
-    # )
+    # メッセージの返信
+    line_bot_api.reply_message(
+        event.reply_token,
+        # メッセージを設定（直前のメッセージをそのまま送信）
+        TextSendMessage(text=event.message.text)# input("返信内容を入力")
+    )
     
     
-    # ChatGPT による返信機能
-    message = GPT.main(Logs)
-    #print(f"\n危険度：{level}\n返信内容：{message}\n")
-    print(f"\n返信内容：{message}\n")
-    # プッシュ通知をする機能
-    if message != 0:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=message)
-        )
+    # # ChatGPT による返信機能
+    # message = GPT.main(Logs)
+    # #print(f"\n危険度：{level}\n返信内容：{message}\n")
+    # print(f"\n返信内容：{message}\n")
+    # # プッシュ通知をする機能
+    # if message != 0:
+    #     line_bot_api.reply_message(
+    #         event.reply_token,
+    #         TextSendMessage(text=message)
+    #     )
     
     """# Rinna による返信機能
     message = Rinna.main(event.message.text)
