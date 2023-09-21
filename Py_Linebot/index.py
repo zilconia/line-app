@@ -11,6 +11,7 @@ from pprint import pprint
 # GPT.py (Rinna.py) をインポート
 import GPT_35 as GPT
 # import Rinna
+
 # LineAPI の値をAPI_key.pyからインポート
 from API_key import Token, Secret
 
@@ -21,6 +22,8 @@ app = Flask(__name__)
 line_bot_api = LineBotApi(Token)
 handler = WebhookHandler(Secret)
 
+M=[]
+
 # 安全装置（他のボットにこのボットが反応しないようにする）
 def is_bot_sender(event):
     sender_id = event.source.user_id
@@ -30,8 +33,39 @@ def is_bot_sender(event):
     return False
 
 class Save: # データ保存用の各種関数を収納
+    @classmethod
+    def Message(cls,id,chat): # 入力内容の記録・GPTへの入力データ出力
+        file="Line_log.json" # ファイルネーム
+        
+        if not(os.path.exists(file)): # 上記ファイルがなかった時の新規作成機能
+            cls.Newfolder(file)
+        
+        Tag = cls.User(id) # ユーザーIDを短絡したタグに変換
+
+        # ファイルに入力内容をを保存する一連の流れ
+        with open(file,"r+",encoding="utf-8") as f:
+            f.seek(0)
+            data = json.load(f)
+            data[str(len(data))]={
+                "UserTag":Tag,
+                "message":chat
+            }
+            if len(data)>100: # チャットデータ数の保存上限超過分を削除
+                for i in range(100): # 最も古いチャット内容を上書き操作で削除する
+                    data[f"{i}"]=data.pop(f"{i+1}")
+            f.seek(0)
+            json.dump(data,f,ensure_ascii = False,indent=4)
+            f.truncate()
+
+            # 入力内容の最新5件をreturnで出力する
+            m=[]
+            for i in range(5):
+                m.insert(0,data[f"{len(data)-1-i}"]) # dataの頭から
+                if (len(data))==i+1 and i<=5:
+                    break
+            return m
     @classmethod 
-    def User(cls,id): # 入力ユーザーの記録・短縮タグの出力
+    def User(cls,id): # 入力ユーザーのID記録・短縮タグの出力
         file = "Line_User.json" # ファイルネーム
 
         if not(os.path.exists(file)): # 上記ファイルがなかった時の新規作成機能
@@ -45,46 +79,14 @@ class Save: # データ保存用の各種関数を収納
                 f.seek(0)
                 json.dump(data,f,ensure_ascii = False,indent=4)
                 f.truncate()
-        
+            # elif "GPT" in id:
+                # data["GPT"] = 
         return data[id] # IDに応じたタグの出力
-
-    # 入力内容の記録用
-    @classmethod
-    def Message(cls,id,chat):
-        file="Line_log.json" # ファイルネーム
-        
-        if not(os.path.exists(file)): # 上記ファイルがなかった時の新規作成機能
-            cls.Newfolder(file)
-
-        # ファイルに入力内容をを保存する一連の流れ
-        with open(file,"r+",encoding="utf-8") as f:
-            f.seek(0)
-            data = json.load(f)
-            data[str(len(data))]={
-                "UserID":id,
-                "message":chat
-            }
-            if len(data)>100: # チャットデータ数の保存上限超過分を削除
-                for i in range(100): # 最も古いチャット内容を上書き操作で削除する
-                    data[f"{i}"]=data.pop(f"{i+1}")
-            f.seek(0)
-            json.dump(data,f,ensure_ascii = False,indent=4)
-            f.truncate()
-            # 入力内容の最新5件をreturnで出力する
-            m=[]
-            for i in range(5):
-                m.insert(0,data[f"{len(data)-1-i}"]) # dataの頭から
-                if (len(data))==i+1 and i<=5:
-                    break
-            return m
-    
     @classmethod
     def Newfolder(cls,name): # 新規フォルダ作成用関数
         with open(name,"w",encoding="utf-8") as f:
                 json.dump({},f,ensure_ascii = False,indent=4)
                 f.truncate()
-
-
         # デバッグ表示
         # pprint(data,width=40)
  
@@ -138,13 +140,10 @@ def handle_message(event):
     
     # ユーザーのIDとメッセージの保存＋直近のログ5件を出力
     Logs=Save.Message(user["id"],user["message"])
-    # Logs のUserIDを短絡的なネームタグ(a,b,c ...)に変換する＋新規ユーザーをネームタグに対応させる。
-    for i in range(len(Logs)):
-        Logs[i]["UserID"]=Save.User(Logs[i]["UserID"])
-        # 入力用の形式に変換する
-        Uid, text = Logs[i]["UserID"], Logs[i]["message"]
-        Logs[i]=f"{Uid}:{text}"
+
     
+    M.append({"role":"user","content":Logs[len(Logs)-1]})
+
     # メッセージの返信
     line_bot_api.reply_message(
         event.reply_token,
@@ -152,13 +151,13 @@ def handle_message(event):
         TextSendMessage(text=event.message.text)# input("返信内容を入力")
     )
     
-    
     # # ChatGPT による返信機能
-    # message = GPT.main(Logs)
+    # message = GPT.main(M)
     # #print(f"\n危険度：{level}\n返信内容：{message}\n")
     # print(f"\n返信内容：{message}\n")
+    # M.append({"role":"assistant","content":message})
     # # プッシュ通知をする機能
-    # if message != 0:
+    # if message != "0":
     #     line_bot_api.reply_message(
     #         event.reply_token,
     #         TextSendMessage(text=message)
