@@ -67,4 +67,9 @@ if __name__ == "__main__":
         if len(a)>=10:
             a.pop(0)
             a.pop(0)
+<<<<<<< HEAD
         a.append(main(a))
+=======
+        a.append(main(a))
+        print(a[len(a)-1])
+>>>>>>> d54b12c7d0939f963b575c8672f6efd5c7034fd7

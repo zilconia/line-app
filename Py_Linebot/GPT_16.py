@@ -26,6 +26,7 @@ def main(user_message):
     for i in flag: # 指定した条件を「content」内に蓄積させていく。
         context[0]["content"] += f"{flag.index(i)+1},{i} "
     
+<<<<<<< HEAD
     
     for i in user_message: # メッセージの履歴と入力内容を追加
         # context.append({"role": "user", "content": i})
@@ -35,6 +36,16 @@ def main(user_message):
         elif user_message.index(i) == (len(user_message)-1):
             context[0]["content"] += "\n「投稿内容」"
         context[0]["content"] += f"\n{i} "
+=======
+    # context.append({"role": "user", "content": user_message})
+    for i in user_message: # メッセージの履歴と入力内容を追加
+        context.append(i)
+        # if user_message.index(i) == 0 and len(user_message) > 1:
+        #     context[0]["content"] += "\n「履歴」"
+        # elif user_message.index(i) == (len(user_message)-1):
+        #     context[0]["content"] += "\n「投稿内容」"
+        # context[0]["content"] += f"\n{i} "
+>>>>>>> d54b12c7d0939f963b575c8672f6efd5c7034fd7
     
     # ChatGPT-API へのデータ入力開始
     response = openai.ChatCompletion.create( 
@@ -65,4 +76,9 @@ if __name__ == "__main__":
         if len(a)>=10:
             a.pop(0)
             a.pop(0)
+<<<<<<< HEAD
         a.append(main(a))
+=======
+        a.append(main(a))
+        print(a[len(a)-1])
+>>>>>>> d54b12c7d0939f963b575c8672f6efd5c7034fd7

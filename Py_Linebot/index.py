@@ -27,7 +27,6 @@ class Save: # データ保存用の各種関数を収納
     @classmethod
     def Message(cls,id,chat): # 入力内容の記録・GPTへの入力データ出力
         file="Line_log.json" # ファイルネーム
-        
         if not(os.path.exists(file)): # 上記ファイルがなかった時の新規作成機能
             cls.Newfolder(file)
         
