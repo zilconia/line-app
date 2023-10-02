@@ -122,7 +122,7 @@ def handle_message(event):
     eve_type=event.source.type
 
     # コンソールへの出力（確認用）
-    print(f"ユーザーネーム：{user['name']}")
+    print(f"\nユーザーネーム：{user['name']}")
     print(f"トークType：{eve_type}")
     print(f"ユーザーID：{user['id']}")
     print(f"Message：{user['message']}")
@@ -131,16 +131,15 @@ def handle_message(event):
     
     # ユーザーのIDとメッセージの保存＋直近のログ5件を出力
     Logs=Save.Message(user["id"],user["message"])
-
     
-    # M.append({"role":"user","content":Logs[len(Logs)-1]})
-
-    # 受信したメッセージの返信
-    line_bot_api.reply_message(
-        event.reply_token,
-        # メッセージを設定（直前のメッセージをそのまま送信）
-        TextSendMessage(text=event.message.text)# input("返信内容を入力")
-    )
+    # M.append({"role":"user","content":Logs[len(Logs)-1]})l
+    
+    # # 受信したメッセージの返信
+    # line_bot_api.reply_message(
+    #     event.reply_token,
+    #     # メッセージを設定（直前のメッセージをそのまま送信）
+    #     TextSendMessage(text=event.message.text)# input("返信内容を入力")
+    # )
     
     # # メッセージの送信（送信先を指定できる）
     # line_bot_api.push_message(
@@ -148,17 +147,17 @@ def handle_message(event):
     #     TextSendMessage(text=event.message.text)
     # )
     
-    # # ChatGPT による返信機能
-    # message = GPT.main(Logs)
-    # #print(f"\n危険度：{level}\n返信内容：{message}\n")
-    # print(f"\n返信内容：{message}\n")
-    # M.append({"role":"assistant","content":message})
-    # # プッシュ通知をする機能
-    # if message != "0":
-    #     line_bot_api.reply_message(
-    #         event.reply_token,
-    #         TextSendMessage(text=message)
-    #     )
+    # ChatGPT による返信機能
+    message = GPT.main(Logs)
+    # print(f"\n危険度：{level}\n返信内容：{message}\n")
+    print(f"\n返信内容：{message}\n")
+    M.append({"role":"assistant","content":message})
+    # プッシュ通知をする機能
+    if message != "0":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=message)
+        )
     
     """# Rinna による返信機能
     message = Rinna.main(event.message.text)
